@@ -79,4 +79,29 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+// GET /auth/me
+const getMe = async (req, res) => {
+  try {
+    // req.user.userId comes from our authenticate middleware!
+    const result = await db.query(
+      'SELECT id, name, email, created_at FROM users WHERE id = $1',
+      [req.user.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'User not found' }
+      });
+    }
+
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'An unexpected error occurred.' }
+    });
+  }
+};
+
+module.exports = { register, login, getMe };
