@@ -1,6 +1,7 @@
 require('dotenv').config();
 const http = require('http');
 const authRoutes = require('./modules/auth/auth.routes');
+const orgRoutes = require('./modules/organizations/organizations.routes');
 const express = require('express');
 const db = require('./config/db'); // This tests the DB connection on startup
 
@@ -19,8 +20,13 @@ app.get('/api/v1/health', async (req, res) => {
 
 app.use('/api/v1/auth', authRoutes);
 
+app.use('/api/v1/organizations', orgRoutes);
+
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+
