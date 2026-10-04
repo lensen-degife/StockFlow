@@ -4,7 +4,7 @@ const requireRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       // The organization ID can be in the URL params, body, or query
-      const organizationId = req.params.organizationId || req.body.organization_id;
+      const organizationId = req.params.organizationId || req.body.organization_id || req.query.organization_id;
       const userId = req.user.userId;
 
       if (!organizationId) {
