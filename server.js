@@ -2,6 +2,7 @@ require('dotenv').config();
 const http = require('http');
 const authRoutes = require('./modules/auth/auth.routes');
 const orgRoutes = require('./modules/organizations/organizations.routes');
+const productRoutes = require('./modules/products/products.routes');
 const express = require('express');
 const db = require('./config/db'); // This tests the DB connection on startup
 
@@ -21,6 +22,8 @@ app.get('/api/v1/health', async (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 
 app.use('/api/v1/organizations', orgRoutes);
+
+app.use('/api/v1/products', productRoutes);
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
