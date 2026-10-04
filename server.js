@@ -4,6 +4,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const orgRoutes = require('./modules/organizations/organizations.routes');
 const productRoutes = require('./modules/products/products.routes');
 const warehouseRoutes = require('./modules/warehouses/warehouses.routes');
+const customerRoutes = require('./modules/customers/customers.routes');
 
 const express = require('express');
 const db = require('./config/db'); // This tests the DB connection on startup
@@ -28,6 +29,8 @@ app.use('/api/v1/organizations', orgRoutes);
 app.use('/api/v1/products', productRoutes);
 
 app.use('/api/v1/warehouses', warehouseRoutes);
+
+app.use('/api/v1/customers', customerRoutes);
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
