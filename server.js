@@ -7,6 +7,7 @@ const warehouseRoutes = require('./modules/warehouses/warehouses.routes');
 const customerRoutes = require('./modules/customers/customers.routes');
 const inventoryRoutes = require('./modules/inventory/inventory.routes');
 const orderRoutes = require('./modules/orders/orders.routes');
+const startReservationTimer = require('./jobs/expireReservations');
 
 const express = require('express');
 const db = require('./config/db'); // This tests the DB connection on startup
@@ -37,6 +38,8 @@ app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/inventory', inventoryRoutes);
 
 app.use('/api/v1/orders', orderRoutes);
+
+startReservationTimer();
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);

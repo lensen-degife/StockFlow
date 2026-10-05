@@ -255,5 +255,59 @@ const cancelOrder = async (req, res) => {
   }
 };
 
+// POST /orders/:orderId/fulfill
+const fulfillOrder = async (req, res) => {
+  const { orderId } = req.params;
+  const organizationId = req.user.organizationId;
+  const client = await db.connect();
 
-module.exports = { createOrder, reserveOrder, confirmOrder, cancelOrder };
+  try {
+    await client.query('BEGIN');
+
+    // 1. Lock the order and verify it is CONFIRMED
+    const orderCheck = await client.query(
+      'SELECT status FROM orders WHERE id = $1 AND organization_id = $2 FOR UPDATE',
+      [orderId, organizationId]
+    );
+
+    if (orderCheck.rows.length === 0) throw new Error('Order not found');
+    if (orderCheck.rows[0].status !== 'CONFIRMED') {
+      throw new Error('Order must be CONFIRMED before it can be fulfilled');
+    }
+
+    // 2. Fetch the items
+    const items = await client.query(
+      'SELECT product_id, warehouse_id, quantity FROM order_items WHERE order_id = $1', 
+      [orderId]
+    );
+
+    // 3. Permanently remove the inventory (subtract from BOTH total and reserved)
+    for (const item of items.rows) {
+      await client.query(`
+        UPDATE inventory_levels 
+        SET quantity = quantity - $1, 
+            quantity_reserved = quantity_reserved - $1 
+        WHERE product_id = $2 AND warehouse_id = $3
+      `, [item.quantity, item.product_id, item.warehouse_id]);
+    }
+
+    // 4. Mark the order as FULFILLED
+    const updatedOrder = await client.query(`
+      UPDATE orders SET status = 'FULFILLED' WHERE id = $1 RETURNING id, status
+    `, [orderId]);
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, data: updatedOrder.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("FULFILL ERROR:", error.message);
+    if (error.message.includes('not found') || error.message.includes('must be')) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: error.message } });
+    }
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Unexpected error.' } });
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { createOrder, reserveOrder, confirmOrder, cancelOrder, fulfillOrder };

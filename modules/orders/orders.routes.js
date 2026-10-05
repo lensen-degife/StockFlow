@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, reserveOrder, confirmOrder, cancelOrder } = require('./orders.controller');
+const { createOrder, reserveOrder, confirmOrder, cancelOrder, fulfillOrder } = require('./orders.controller');
 const authenticate = require('../../middleware/authenticate');
 const requireRole = require('../../middleware/requireRole'); 
 
@@ -33,6 +33,13 @@ router.post(
   authenticate, 
   requireRole(['org_admin', 'staff']), 
   cancelOrder
+);
+
+router.post(
+  '/:orderId/fulfill', 
+  authenticate, 
+  requireRole(['org_admin', 'staff']), 
+  fulfillOrder
 );
 
 module.exports = router;
