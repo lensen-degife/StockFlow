@@ -1,0 +1,105 @@
+const db = require('../../config/db');
+
+// POST /inventory/adjust
+const adjustStock = async (req, res) => {
+  const { product_id, warehouse_id, quantity_change } = req.body;
+  const organizationId = req.user.organizationId;
+
+  if (!product_id || !warehouse_id || quantity_change === undefined) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: 'Product ID, Warehouse ID, and quantity_change are required' }
+    });
+  }
+
+  const client = await db.connect();
+
+  try {
+    await client.query('BEGIN'); // Start the safety transaction
+
+    // 1. Verify the product belongs to this organization
+    const productCheck = await client.query(
+      'SELECT id FROM products WHERE id = $1 AND organization_id = $2',
+      [product_id, organizationId]
+    );
+    if (productCheck.rows.length === 0) {
+      throw new Error('Product not found in your organization');
+    }
+
+    // 2. Verify the warehouse belongs to this organization
+    const warehouseCheck = await client.query(
+      'SELECT id FROM warehouses WHERE id = $1 AND organization_id = $2',
+      [warehouse_id, organizationId]
+    );
+    if (warehouseCheck.rows.length === 0) {
+      throw new Error('Warehouse not found in your organization');
+    }
+
+    // 3. UPSERT the inventory level
+    // This tells Postgres: Try to insert a new row. If a row with this product and warehouse already exists, 
+    // just ADD the quantity_change to the existing quantity!
+    const inventoryResult = await client.query(`
+      INSERT INTO inventory_levels (organization_id, product_id, warehouse_id, quantity)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (product_id, warehouse_id) 
+      DO UPDATE SET quantity = inventory_levels.quantity + EXCLUDED.quantity, updated_at = CURRENT_TIMESTAMP
+      RETURNING id, product_id, warehouse_id, quantity
+    `, [organizationId, product_id, warehouse_id, quantity_change]);
+
+    // Prevent negative inventory
+    if (inventoryResult.rows[0].quantity < 0) {
+      throw new Error('Insufficient stock for this transaction');
+    }
+
+    // (Optional but recommended) 4. Log this movement in a stock_movements ledger table here
+
+    await client.query('COMMIT'); // Everything worked, save it!
+    
+    res.status(200).json({ success: true, data: inventoryResult.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK'); // Undo if anything failed!
+    console.error("ADJUST STOCK ERROR:", error.message);
+    
+    // Return friendly errors for our custom throws
+    if (error.message.includes('not found') || error.message.includes('Insufficient')) {
+       return res.status(400).json({
+         success: false,
+         error: { code: 'BAD_REQUEST', message: error.message }
+       });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'An unexpected error occurred.' }
+    });
+  } finally {
+    client.release(); // Give the connection back to the pool
+  }
+};
+
+// GET /inventory
+// See all stock levels for the organization
+const getInventory = async (req, res) => {
+  try {
+    const organizationId = req.user.organizationId;
+    
+    const result = await db.query(`
+      SELECT i.quantity, p.name AS product_name, p.sku, w.name AS warehouse_name
+      FROM inventory_levels i
+      JOIN products p ON i.product_id = p.id
+      JOIN warehouses w ON i.warehouse_id = w.id
+      WHERE i.organization_id = $1
+      ORDER BY p.name ASC, w.name ASC
+    `, [organizationId]);
+
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error("GET INVENTORY ERROR:", error);
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'An unexpected error occurred.' }
+    });
+  }
+};
+
+module.exports = { adjustStock, getInventory };
