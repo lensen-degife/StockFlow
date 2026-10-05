@@ -168,4 +168,92 @@ const reserveOrder = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, reserveOrder }; 
+// POST /orders/:orderId/confirm
+const confirmOrder = async (req, res) => {
+  const { orderId } = req.params;
+  const organizationId = req.user.organizationId;
+  const client = await db.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const orderCheck = await client.query(
+      'SELECT status FROM orders WHERE id = $1 AND organization_id = $2 FOR UPDATE',
+      [orderId, organizationId]
+    );
+
+    if (orderCheck.rows.length === 0) throw new Error('Order not found');
+    if (orderCheck.rows[0].status !== 'RESERVED') throw new Error('Order must be RESERVED before confirming');
+
+    const updatedOrder = await client.query(`
+      UPDATE orders SET status = 'CONFIRMED' WHERE id = $1 RETURNING id, status
+    `, [orderId]);
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, data: updatedOrder.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("CONFIRM ERROR:", error.message);
+    if (error.message.includes('not found') || error.message.includes('must be')) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: error.message } });
+    }
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Unexpected error.' } });
+  } finally {
+    client.release();
+  }
+};
+
+// POST /orders/:orderId/cancel
+const cancelOrder = async (req, res) => {
+  const { orderId } = req.params;
+  const organizationId = req.user.organizationId;
+  const client = await db.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const orderCheck = await client.query(
+      'SELECT status FROM orders WHERE id = $1 AND organization_id = $2 FOR UPDATE',
+      [orderId, organizationId]
+    );
+
+    if (orderCheck.rows.length === 0) throw new Error('Order not found');
+    const currentStatus = orderCheck.rows[0].status;
+
+    if (currentStatus === 'FULFILLED' || currentStatus === 'CANCELLED') {
+      throw new Error(`Cannot cancel an order that is already ${currentStatus}`);
+    }
+
+    // If the order was holding stock, we must release it back to the warehouse
+    if (currentStatus === 'RESERVED' || currentStatus === 'CONFIRMED') {
+      const items = await client.query('SELECT product_id, warehouse_id, quantity FROM order_items WHERE order_id = $1', [orderId]);
+      
+      for (const item of items.rows) {
+        await client.query(`
+          UPDATE inventory_levels 
+          SET quantity_reserved = quantity_reserved - $1 
+          WHERE product_id = $2 AND warehouse_id = $3
+        `, [item.quantity, item.product_id, item.warehouse_id]);
+      }
+    }
+
+    const updatedOrder = await client.query(`
+      UPDATE orders SET status = 'CANCELLED' WHERE id = $1 RETURNING id, status
+    `, [orderId]);
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, data: updatedOrder.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("CANCEL ERROR:", error.message);
+    if (error.message.includes('not found') || error.message.includes('Cannot cancel')) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: error.message } });
+    }
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Unexpected error.' } });
+  } finally {
+    client.release();
+  }
+};
+
+
+module.exports = { createOrder, reserveOrder, confirmOrder, cancelOrder };
