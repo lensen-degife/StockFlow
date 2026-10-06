@@ -49,10 +49,15 @@ const createOrder = async (req, res) => {
       `, [newOrderId, item.product_id, item.warehouse_id, item.quantity, item.unit_price]);
     }
 
+    await client.query(`
+      INSERT INTO audit_logs (organization_id, actor_id, action, resource_type, resource_id)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [organizationId, createdBy, 'CREATED_ORDER', 'order', newOrderId]);
+
     await client.query('COMMIT'); // Save everything!
-    
-    res.status(201).json({ 
-      success: true, 
+
+    res.status(201).json({
+      success: true,
       data: {
         ...orderResult.rows[0],
         items: items
@@ -62,9 +67,9 @@ const createOrder = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK'); // Undo if anything fails
     console.error("CREATE ORDER ERROR:", error);
-    
+
     // Catch the specific unique constraint violation for the Idempotency Key
-    if (error.code === '23505') { 
+    if (error.code === '23505') {
       return res.status(409).json({
         success: false,
         error: { code: 'CONFLICT', message: 'An order with this Idempotency-Key was already created.' }
@@ -84,6 +89,7 @@ const createOrder = async (req, res) => {
 const reserveOrder = async (req, res) => {
   const { orderId } = req.params;
   const organizationId = req.user.organizationId;
+  const actorId = req.user.userId;
   const client = await db.connect();
 
   try {
@@ -145,13 +151,18 @@ const reserveOrder = async (req, res) => {
       RETURNING id, status, reservation_expires_at
     `, [orderId]);
 
+    await client.query(`
+      INSERT INTO audit_logs (organization_id, actor_id, action, resource_type, resource_id)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [organizationId, actorId, 'RESERVED_ORDER', 'order', orderId]);
+
     await client.query('COMMIT'); // Release the locks and save!
-    
+
     res.status(200).json({ success: true, data: updatedOrder.rows[0] });
   } catch (error) {
     await client.query('ROLLBACK'); // Undo everything and release locks if anything fails
     console.error("RESERVE ERROR:", error.message);
-    
+
     if (error.message.includes('not found') || error.message.includes('status') || error.message.includes('Insufficient')) {
       return res.status(400).json({
         success: false,
@@ -172,6 +183,7 @@ const reserveOrder = async (req, res) => {
 const confirmOrder = async (req, res) => {
   const { orderId } = req.params;
   const organizationId = req.user.organizationId;
+  const actorId = req.user.userId;
   const client = await db.connect();
 
   try {
@@ -188,6 +200,11 @@ const confirmOrder = async (req, res) => {
     const updatedOrder = await client.query(`
       UPDATE orders SET status = 'CONFIRMED' WHERE id = $1 RETURNING id, status
     `, [orderId]);
+
+    await client.query(`
+      INSERT INTO audit_logs (organization_id, actor_id, action, resource_type, resource_id)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [organizationId, actorId, 'CONFIRMED_ORDER', 'order', orderId]);
 
     await client.query('COMMIT');
     res.status(200).json({ success: true, data: updatedOrder.rows[0] });
@@ -207,6 +224,7 @@ const confirmOrder = async (req, res) => {
 const cancelOrder = async (req, res) => {
   const { orderId } = req.params;
   const organizationId = req.user.organizationId;
+  const actorId = req.user.userId;
   const client = await db.connect();
 
   try {
@@ -227,7 +245,7 @@ const cancelOrder = async (req, res) => {
     // If the order was holding stock, we must release it back to the warehouse
     if (currentStatus === 'RESERVED' || currentStatus === 'CONFIRMED') {
       const items = await client.query('SELECT product_id, warehouse_id, quantity FROM order_items WHERE order_id = $1', [orderId]);
-      
+
       for (const item of items.rows) {
         await client.query(`
           UPDATE inventory_levels 
@@ -240,6 +258,11 @@ const cancelOrder = async (req, res) => {
     const updatedOrder = await client.query(`
       UPDATE orders SET status = 'CANCELLED' WHERE id = $1 RETURNING id, status
     `, [orderId]);
+
+    await client.query(`
+      INSERT INTO audit_logs (organization_id, actor_id, action, resource_type, resource_id)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [organizationId, actorId, 'CANCELLED_ORDER', 'order', orderId]);
 
     await client.query('COMMIT');
     res.status(200).json({ success: true, data: updatedOrder.rows[0] });
@@ -259,6 +282,7 @@ const cancelOrder = async (req, res) => {
 const fulfillOrder = async (req, res) => {
   const { orderId } = req.params;
   const organizationId = req.user.organizationId;
+  const actorId = req.user.userId;
   const client = await db.connect();
 
   try {
@@ -277,7 +301,7 @@ const fulfillOrder = async (req, res) => {
 
     // 2. Fetch the items
     const items = await client.query(
-      'SELECT product_id, warehouse_id, quantity FROM order_items WHERE order_id = $1', 
+      'SELECT product_id, warehouse_id, quantity FROM order_items WHERE order_id = $1',
       [orderId]
     );
 
@@ -295,6 +319,11 @@ const fulfillOrder = async (req, res) => {
     const updatedOrder = await client.query(`
       UPDATE orders SET status = 'FULFILLED' WHERE id = $1 RETURNING id, status
     `, [orderId]);
+
+    await client.query(`
+      INSERT INTO audit_logs (organization_id, actor_id, action, resource_type, resource_id)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [organizationId, actorId, 'FULFILLED_ORDER', 'order', orderId]);
 
     await client.query('COMMIT');
     res.status(200).json({ success: true, data: updatedOrder.rows[0] });
