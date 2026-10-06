@@ -8,6 +8,7 @@ const customerRoutes = require('./modules/customers/customers.routes');
 const inventoryRoutes = require('./modules/inventory/inventory.routes');
 const orderRoutes = require('./modules/orders/orders.routes');
 const startReservationTimer = require('./jobs/expireReservations');
+const auditRoutes = require('./modules/audit/audit.routes');
 
 const express = require('express');
 const db = require('./config/db'); // This tests the DB connection on startup
@@ -38,6 +39,8 @@ app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/inventory', inventoryRoutes);
 
 app.use('/api/v1/orders', orderRoutes);
+
+app.use('/api/v1/audit-logs', auditRoutes);
 
 startReservationTimer();
 
