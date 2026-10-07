@@ -20,6 +20,9 @@ const orderRoutes = require('./modules/orders/orders.routes');
 const auditRoutes = require('./modules/audit/audit.routes');
 const reportRoutes = require('./modules/reports/reports.routes');
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocs = require('./config/swagger');
+
 const app = express();
 
 // Security & Parsing Middleware
@@ -60,6 +63,8 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/audit-logs', auditRoutes);
 
 app.use('/api/v1/reports', reportRoutes);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 startReservationTimer();
 
