@@ -4,7 +4,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 
-const db = require('./config/db'); 
+const db = require('./config/db');
 const startReservationTimer = require('./jobs/expireReservations');
 const apiLimiter = require('./middleware/rateLimiter');
 const logger = require('./middleware/logger');
@@ -66,13 +66,19 @@ app.use('/api/v1/reports', reportRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-startReservationTimer();
+
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
+// Only start the server AND the background job if run directly (node server.js)
+if (require.main === module) {
+  
+  startReservationTimer();
 
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
+module.exports = app;
