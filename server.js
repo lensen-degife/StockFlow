@@ -1,5 +1,14 @@
 require('dotenv').config();
 const http = require('http');
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+
+const db = require('./config/db'); 
+const startReservationTimer = require('./jobs/expireReservations');
+const apiLimiter = require('./middleware/rateLimiter');
+
+// Route Imports
 const authRoutes = require('./modules/auth/auth.routes');
 const orgRoutes = require('./modules/organizations/organizations.routes');
 const productRoutes = require('./modules/products/products.routes');
@@ -7,14 +16,17 @@ const warehouseRoutes = require('./modules/warehouses/warehouses.routes');
 const customerRoutes = require('./modules/customers/customers.routes');
 const inventoryRoutes = require('./modules/inventory/inventory.routes');
 const orderRoutes = require('./modules/orders/orders.routes');
-const startReservationTimer = require('./jobs/expireReservations');
 const auditRoutes = require('./modules/audit/audit.routes');
 
-const express = require('express');
-const db = require('./config/db'); // This tests the DB connection on startup
-
 const app = express();
+
+// Security & Parsing Middleware
+app.use(helmet()); // Secures HTTP headers
+app.use(cors()); // Allows browser clients to access your API
 app.use(express.json());
+
+// Apply the rate limiting middleware to all /api/ requests
+app.use('/api/', apiLimiter);
 
 // Basic health check endpoint
 app.get('/api/v1/health', async (req, res) => {
