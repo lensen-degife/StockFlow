@@ -7,6 +7,7 @@ const cors = require('cors');
 const db = require('./config/db'); 
 const startReservationTimer = require('./jobs/expireReservations');
 const apiLimiter = require('./middleware/rateLimiter');
+const logger = require('./middleware/logger');
 
 // Route Imports
 const authRoutes = require('./modules/auth/auth.routes');
@@ -25,8 +26,11 @@ app.use(helmet()); // Secures HTTP headers
 app.use(cors()); // Allows browser clients to access your API
 app.use(express.json());
 
+app.use(logger);
+
 // Apply the rate limiting middleware to all /api/ requests
 app.use('/api/', apiLimiter);
+
 
 // Basic health check endpoint
 app.get('/api/v1/health', async (req, res) => {
