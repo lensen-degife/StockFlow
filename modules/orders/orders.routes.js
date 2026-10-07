@@ -4,6 +4,9 @@ const { createOrder, reserveOrder, confirmOrder, cancelOrder, fulfillOrder } = r
 const authenticate = require('../../middleware/authenticate');
 const requireRole = require('../../middleware/requireRole'); 
 
+const validate = require('../../middleware/validate');
+const { createOrderSchema } = require('../../validations/orders.schema');
+
 // POST /orders
 router.post(
   '/', 
@@ -40,6 +43,15 @@ router.post(
   authenticate, 
   requireRole(['org_admin', 'staff']), 
   fulfillOrder
+);
+
+// POST /orders
+router.post(
+  '/', 
+  authenticate, 
+  requireRole(['org_admin', 'staff']), 
+  validate(createOrderSchema), // <-- ADD THE BOUNCER HERE
+  createOrder
 );
 
 module.exports = router;
