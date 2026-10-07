@@ -12,6 +12,7 @@ router.post(
   '/', 
   authenticate, 
   requireRole(['org_admin', 'staff']), 
+  validate(createOrderSchema), 
   createOrder
 );
 
@@ -45,13 +46,6 @@ router.post(
   fulfillOrder
 );
 
-// POST /orders
-router.post(
-  '/', 
-  authenticate, 
-  requireRole(['org_admin', 'staff']), 
-  validate(createOrderSchema), // <-- ADD THE BOUNCER HERE
-  createOrder
-);
+
 
 module.exports = router;
