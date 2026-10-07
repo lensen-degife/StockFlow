@@ -18,6 +18,7 @@ const customerRoutes = require('./modules/customers/customers.routes');
 const inventoryRoutes = require('./modules/inventory/inventory.routes');
 const orderRoutes = require('./modules/orders/orders.routes');
 const auditRoutes = require('./modules/audit/audit.routes');
+const reportRoutes = require('./modules/reports/reports.routes');
 
 const app = express();
 
@@ -57,6 +58,8 @@ app.use('/api/v1/inventory', inventoryRoutes);
 app.use('/api/v1/orders', orderRoutes);
 
 app.use('/api/v1/audit-logs', auditRoutes);
+
+app.use('/api/v1/reports', reportRoutes);
 
 startReservationTimer();
 
