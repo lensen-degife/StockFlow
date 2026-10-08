@@ -1,0 +1,526 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: My first collection
+meta:
+  id: wrk_1bcb506f65b845449607fc05ab25d7c6
+  created: 1791015515226
+  modified: 1791015515226
+  description: ""
+collection:
+  - url: http://localhost:3000/api/v1/auth/login
+    name: login
+    meta:
+      id: req_25946bea82a3493d8bc6909dd0fcc375
+      created: 1791015515415
+      modified: 1791444719044
+      isPrivate: false
+      description: ""
+      sortKey: -1791015515415
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "lensen",
+        	"email": "lensendegife@gmail.com",
+        	"password": "user1234"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/auth/me
+    name: auth me
+    meta:
+      id: req_2075dd9bb63c44f7bef68ae020dfa036
+      created: 1791018319218
+      modified: 1791445019684
+      isPrivate: false
+      description: ""
+      sortKey: -1791018319218
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YzkyZjc0Zi1hOGE2LTRiMjEtYjlmZC04ZWU1ZTIyOTQ3YjkiLCJpYXQiOjE3OTE0NDQ3MjMsImV4cCI6MTc5MTUzMTEyM30.L0IBh6a3dvhJu168uAG2lgF9elUSsEP2MOenL1oQqYE
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/organizations/de145505-9272-4e6c-8105-9f34613ed650/members
+    name: organizations
+    meta:
+      id: req_246d7aa62e254030a8fbae55df3b3d30
+      created: 1791044981095
+      modified: 1791445230433
+      isPrivate: false
+      description: ""
+      sortKey: -1791044981095
+    method: GET
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "acne corp",
+        	"slug": "acne-corp"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YzkyZjc0Zi1hOGE2LTRiMjEtYjlmZC04ZWU1ZTIyOTQ3YjkiLCJpYXQiOjE3OTE0NDQ3MjMsImV4cCI6MTc5MTUzMTEyM30.L0IBh6a3dvhJu168uAG2lgF9elUSsEP2MOenL1oQqYE
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/organizations/de145505-9272-4e6c-8105-9f34613ed650
+    name: add user
+    meta:
+      id: req_a3a306c434a04e188c381e59e711e8ae
+      created: 1791046687462
+      modified: 1791445244459
+      isPrivate: false
+      description: ""
+      sortKey: -1791046687462
+    method: GET
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"email": "degife@gmail.com", 
+        	"role": "staff"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YzkyZjc0Zi1hOGE2LTRiMjEtYjlmZC04ZWU1ZTIyOTQ3YjkiLCJpYXQiOjE3OTE0NDQ3MjMsImV4cCI6MTc5MTUzMTEyM30.L0IBh6a3dvhJu168uAG2lgF9elUSsEP2MOenL1oQqYE
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/products?organization_id=de145505-9272-4e6c-8105-9f34613ed650&search=Think&limit=5&sortBy=price&sortOrder=DESC
+    name: post product
+    meta:
+      id: req_af5258452c69457b94250ab4c1e2c50a
+      created: 1791132197032
+      modified: 1791445366857
+      isPrivate: false
+      description: ""
+      sortKey: -1791132197032
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization_id": "de145505-9272-4e6c-8105-9f34613ed650",
+          "sku": "LAPTOP-11",
+          "name": "ThinkPad T14",
+          "price": 1200.00
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YzkyZjc0Zi1hOGE2LTRiMjEtYjlmZC04ZWU1ZTIyOTQ3YjkiLCJpYXQiOjE3OTE0NDQ3MjMsImV4cCI6MTc5MTUzMTEyM30.L0IBh6a3dvhJu168uAG2lgF9elUSsEP2MOenL1oQqYE
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/warehouses
+    name: warehouses
+    meta:
+      id: req_0fd67d8995084742bd357cd8bc6d84d5
+      created: 1791133226136
+      modified: 1791133414552
+      isPrivate: false
+      description: ""
+      sortKey: -1791133226136
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization_id": "d94b05c3-f097-4096-bcb5-a1374c3d7a92",
+          "name": "Main Distribution Center",
+          "location": "Addis Ababa"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTExMzMzNTQsImV4cCI6MTc5MTIxOTc1NH0.PdYh7-FnKNd1WOR4KVGkXW3dxvefb7RRDyD5UXoCeyc
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/customers
+    name: customers
+    meta:
+      id: req_47376d09561642718191dd4f335c35e7
+      created: 1791133608919
+      modified: 1791133898948
+      isPrivate: false
+      description: ""
+      sortKey: -1791133608919
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization_id": "d94b05c3-f097-4096-bcb5-a1374c3d7a92",
+          "name": "Acme Corp",
+          "email": "purchasing@acmecorp.com",
+          "phone": "+251 911 234 567"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTExMzM2ODQsImV4cCI6MTc5MTIyMDA4NH0.KTOOGk9gTi8uUn-OnbPLD56OBWar8D5TGTrhGaP5B_M
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/inventory/adjust
+    name: inventory
+    meta:
+      id: req_8b0517256c4941c9ae8f4f1eb9d85ce9
+      created: 1791182109005
+      modified: 1791392814216
+      isPrivate: false
+      description: ""
+      sortKey: -1791182109005
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "organization_id": "d94b05c3-f097-4096-bcb5-a1374c3d7a92",
+          "product_id": "1b3d5151-dc71-4360-8c3f-21613021e402",
+          "warehouse_id": "3777594f-0183-4bf7-b888-2d2d16936689",
+          "quantity_change": -20
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTEzOTI3MzEsImV4cCI6MTc5MTQ3OTEzMX0.U5LlZ2-T-zOxboBk00yFD1PGXztjBhtmCswmq9isrHI
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/inventory?organization_id=d94b05c3-f097-4096-bcb5-a1374c3d7a92
+    name: organizations products
+    meta:
+      id: req_28d252c918e14934b6059bc37b228f41
+      created: 1791182820130
+      modified: 1791182998811
+      isPrivate: false
+      description: ""
+      sortKey: -1791182820130
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTExODI4OTAsImV4cCI6MTc5MTI2OTI5MH0.iHUnc2f_IT4ouDk4a2Hcvov-SAePGIcZ_Qxmo41uigk
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/orders
+    name: orders
+    meta:
+      id: req_5c907b6d9eaf4b12a50516389f809b68
+      created: 1791185796979
+      modified: 1791393003921
+      isPrivate: false
+      description: ""
+      sortKey: -1791185796979
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"organization_id": "d94b05c3-f097-4096-bcb5-a1374c3d7a92",
+          "customer_id": "d2d9a579-7606-4e7f-bba7-71fc2d3ee1e5",
+          "items": [
+            {
+              "product_id": "1b3d5151-dc71-4360-8c3f-21613021e402",
+              "warehouse_id": "3777594f-0183-4bf7-b888-2d2d16936689",
+              "quantity": -2,
+              "unit_price": -1200.00
+            }
+          ]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+      - name: Idempotency-key
+        value: order-req-zod-007
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTEzOTI3MzEsImV4cCI6MTc5MTQ3OTEzMX0.U5LlZ2-T-zOxboBk00yFD1PGXztjBhtmCswmq9isrHI
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/orders/eea62abf-aa48-4574-98cb-4820759e1e6d/reserve
+    name: reserveOrder
+    meta:
+      id: req_a10c74a0b0f040af9d635c25673f178b
+      created: 1791188701370
+      modified: 1791271666323
+      isPrivate: false
+      description: ""
+      sortKey: -1791188701370
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"organization_id": "d94b05c3-f097-4096-bcb5-a1374c3d7a92"
+        	
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTExODg4MjUsImV4cCI6MTc5MTI3NTIyNX0.gSeQkkvdKPDuZeXpW1f0yGizzE5mD48yydr3nC3nP94
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/orders/eea62abf-aa48-4574-98cb-4820759e1e6d/confirm
+    name: confirmOrder
+    meta:
+      id: req_69652952569c47eababb71fb31fd0545
+      created: 1791189202470
+      modified: 1791271689341
+      isPrivate: false
+      description: ""
+      sortKey: -1791189202470
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"organization_id": "d94b05c3-f097-4096-bcb5-a1374c3d7a92"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTExODkzMTQsImV4cCI6MTc5MTI3NTcxNH0.5mMTCOZ7-dKC0tVCATlYTVCJF4Qxg72yjpkxhICiSNo
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/orders/eea62abf-aa48-4574-98cb-4820759e1e6d/cancel
+    name: cancelOrder
+    meta:
+      id: req_1e9b474426ea42328abc9e7eabc12b49
+      created: 1791189219281
+      modified: 1791271713373
+      isPrivate: false
+      description: ""
+      sortKey: -1791189219281
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"organization_id": "d94b05c3-f097-4096-bcb5-a1374c3d7a92"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTExODk0MzIsImV4cCI6MTc5MTI3NTgzMn0.RpYECVifqejoeFrthh5A7ViSDWO6X57brEq0MnpoLi0
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/audit-logs?organization_id=d94b05c3-f097-4096-bcb5-a1374c3d7a92
+    name: auditLogs
+    meta:
+      id: req_689dd22306c5445791186e3edce8e00f
+      created: 1791269420004
+      modified: 1791270627105
+      isPrivate: false
+      description: ""
+      sortKey: -1791269420004
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTEyNjk0NzksImV4cCI6MTc5MTM1NTg3OX0.8pTGO5ULxxyZZPEunGzxHHfxr_RP_AsfllwZLK9qoZA
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:3000/api/v1/reports/low-stock?organization_id=d94b05c3-f097-4096-bcb5-a1374c3d7a92
+    name: low stock report
+    meta:
+      id: req_d5387ee8aed3465fb0e39e22c0de0db6
+      created: 1791389463818
+      modified: 1791389527181
+      isPrivate: false
+      description: ""
+      sortKey: -1791389463818
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.6.0
+        description: ""
+        disabled: false
+    authentication:
+      type: bearer
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxYWM1ODFkNi01YTYzLTRiOTUtYTQ0Yy04ZDFmMDMwNmU3YmEiLCJpYXQiOjE3OTEzODk1MTUsImV4cCI6MTc5MTQ3NTkxNX0.onIAG75-aWIn1KZOEI66NwwXxRM5KJUbhd9GOscA6jg
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_55cb05d246068f1b315ea3162fe22746b41fb8be
+    created: 1791015515235
+    modified: 1791015515235
+environments:
+  name: Base Environment
+  meta:
+    id: env_55cb05d246068f1b315ea3162fe22746b41fb8be
+    created: 1791015515231
+    modified: 1791015515231
+    isPrivate: false
