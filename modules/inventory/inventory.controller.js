@@ -102,4 +102,82 @@ const getInventory = async (req, res) => {
   }
 };
 
-module.exports = { adjustStock, getInventory };
+// POST /inventory/transfer
+// POST /inventory/transfer
+const transferStock = async (req, res) => {
+  const { product_id, from_warehouse_id, to_warehouse_id, quantity } = req.body;
+  const organizationId = req.user.organizationId;
+  const userId = req.user.userId;
+
+  if (from_warehouse_id === to_warehouse_id) {
+    return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Cannot transfer to the same warehouse' } });
+  }
+
+  const client = await db.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Deduct from Source Warehouse (Removed updated_at)
+    const deductResult = await client.query(
+      `UPDATE inventory 
+       SET quantity_on_hand = quantity_on_hand - $1
+       WHERE product_id = $2 AND warehouse_id = $3 AND organization_id = $4
+       RETURNING quantity_on_hand`,
+      [quantity, product_id, from_warehouse_id, organizationId]
+    );
+
+    if (deductResult.rows.length === 0) {
+      throw new Error('Source inventory not found or insufficient stock');
+    }
+
+    // 2. Add to Destination Warehouse (Removed updated_at)
+    await client.query(
+      `INSERT INTO inventory (organization_id, warehouse_id, product_id, quantity_on_hand)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (warehouse_id, product_id) 
+       DO UPDATE SET quantity_on_hand = inventory.quantity_on_hand + EXCLUDED.quantity_on_hand`,
+      [organizationId, to_warehouse_id, product_id, quantity]
+    );
+
+    // 3. Write OUT movement
+    await client.query(
+      `INSERT INTO inventory_movements (organization_id, warehouse_id, product_id, type, quantity)
+       VALUES ($1, $2, $3, 'TRANSFER_OUT', $4)`,
+      [organizationId, from_warehouse_id, product_id, -quantity]
+    );
+
+    // 4. Write IN movement
+    await client.query(
+      `INSERT INTO inventory_movements (organization_id, warehouse_id, product_id, type, quantity)
+       VALUES ($1, $2, $3, 'TRANSFER_IN', $4)`,
+      [organizationId, to_warehouse_id, product_id, quantity]
+    );
+
+    // 5. Audit Log
+    await client.query(
+      `INSERT INTO audit_logs (organization_id, actor_id, action, resource_type, resource_id)
+       VALUES ($1, $2, 'TRANSFERRED_STOCK', 'product', $3)`,
+      [organizationId, userId, product_id]
+    );
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, data: { message: 'Transfer successful' } });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("TRANSFER ERROR:", error);
+    
+    // Catch our database CHECK constraint violation for negative stock
+    if (error.code === '23514' || error.message.includes('insufficient stock')) {
+        return res.status(400).json({ success: false, error: { code: 'INSUFFICIENT_INVENTORY', message: 'Not enough stock to transfer' } });
+    }
+
+    res.status(500).json({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Failed to transfer inventory' } });
+  } finally {
+    client.release();
+  }
+};
+
+
+module.exports = { adjustStock, getInventory, transferStock};

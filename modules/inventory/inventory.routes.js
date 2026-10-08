@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { adjustStock, getInventory } = require('./inventory.controller');
+const { adjustStock, getInventory, transferStock } = require('./inventory.controller');
 const authenticate = require('../../middleware/authenticate');
 const requireRole = require('../../middleware/requireRole'); 
 
@@ -18,6 +18,13 @@ router.get(
   authenticate, 
   requireRole(['org_admin', 'staff', 'viewer']), 
   getInventory
+);
+
+router.post(
+  '/transfer', 
+  authenticate, 
+  requireRole(['org_admin', 'staff']), 
+  transferStock
 );
 
 module.exports = router;
