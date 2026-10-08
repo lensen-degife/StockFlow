@@ -24,7 +24,7 @@ const validate = (schema) => (req, res, next) => {
       });
     }
 
-    // 2. If it is NOT a Zod error, log the real problem so we can fix it
+    // 2. If it is NOT a Zod error, log the real error and return a generic 500 response
     console.error("🚨 MIDDLEWARE CRASH:", error);
     return res.status(500).json({
       success: false,
