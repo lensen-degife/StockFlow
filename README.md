@@ -1,4 +1,4 @@
-Markdown
+```markdown
 # StockFlow Lite
 
 ## Project Description
@@ -23,22 +23,24 @@ This project runs natively on your machine without Docker.
 git clone <your-repo-url>
 cd stockflow-lite
 npm install
-2. Database Setup
+```
+
+**2. Database Setup**  
 Ensure you have PostgreSQL installed locally or have a hosted database connection string (e.g., Supabase, Neon, or ElephantSQL). Create an empty database for this project.
 
-3. Configure Environment Variables
-Create a .env file in the root directory (do not commit this file). See the section below for required variables.
+**3. Configure Environment Variables**  
+Create a `.env` file in the root directory (do not commit this file). See the section below for required variables.
 
-4. Start the Server
-
-Bash
+**4. Start the Server**
+```bash
 npm start
+```
 The server will start on http://localhost:3000.
 
-Environment Variables
-A sample file named .env.example is included in the repository. Your actual .env file should contain the following keys:
+## Environment Variables
+A sample file named `.env.example` is included in the repository. Your actual `.env` file should contain the following keys:
 
-Code snippet
+```env
 # Server Configuration
 PORT=3000
 
@@ -47,59 +49,48 @@ DATABASE_URL=postgresql://username:password@localhost:5432/stockflow_db
 
 # Security
 JWT_SECRET=your_super_secret_jwt_key_here
-Migrations and Seed Data
+```
+
+## Migrations and Seed Data
 To set up the database schema and populate it with initial test data (Organizations, Users, Products, and Warehouses):
 
-Ensure your DATABASE_URL is correctly set in your .env file.
+1. Ensure your `DATABASE_URL` is correctly set in your `.env` file.
+2. Run the setup script from the root directory:
 
-Run the setup script from the root directory:
-
-Bash
-node fix-db.js 
+```bash
+node fix-db.js
 # (Or replace with your specific migration/seed script name if you renamed it)
+```
+
 The console will confirm that tables have been created and dummy data has been inserted.
 
-API Documentation
-Interactive API documentation is generated automatically using Swagger UI.
+## API Documentation
 
-Once the server is running, navigate to:
-http://localhost:3000/api-docs
+**1. Postman Collection (Primary)**  
+A complete, well-organized Postman collection is included in the root of this repository (`StockFlow_Lite.postman_collection.json`). It contains folders for each module, example requests, required headers, and sample responses. Simply import this file into Postman to test the API immediately.
 
-From here, you can view all available endpoints, required request body schemas, and test the API directly from your browser (requires logging in via the /auth/login endpoint and clicking the "Authorize" padlock at the top).
+**2. Swagger / OpenAPI (Stretch Goal Implemented)**  
+As a Priority 3 stretch goal, interactive web-based documentation has also been generated. Once the server is running, you can explore it in your browser at:  
+**[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
 
-Concurrency Strategy (Section 9)
+## Concurrency Strategy (Section 9)
 Handling concurrent inventory requests is a critical challenge in e-commerce. StockFlow Lite handles high-concurrency environments using the following strategies:
 
-Transactional Integrity (BEGIN, COMMIT, ROLLBACK):
+**Transactional Integrity (BEGIN, COMMIT, ROLLBACK):**  
 Order creation and inventory deduction are wrapped in strict PostgreSQL transactions. If any step fails (e.g., writing the audit log or reserving inventory), the entire database transaction is rolled back, guaranteeing no orphan records or partial stock deductions.
 
-Idempotency Keys:
-The POST /orders endpoint requires an Idempotency-Key header. This prevents accidental duplicate orders if a client retries a request due to a network timeout. The database enforces a unique constraint on (organization_id, idempotency_key).
+**Idempotency Keys:**  
+The `POST /orders` endpoint requires an `Idempotency-Key` header. This prevents accidental duplicate orders if a client retries a request due to a network timeout. The database enforces a unique constraint on `(organization_id, idempotency_key)`.
 
-The Reservation Pattern:
-Instead of immediately deducting stock from quantity, orders initially move stock into quantity_reserved. A background worker (or manual trigger) confirms or expires these reservations. This prevents overselling while keeping available stock calculations (quantity - quantity_reserved) accurate in real-time.
+**The Reservation Pattern:**  
+Instead of immediately deducting stock from `quantity`, orders initially move stock into `quantity_reserved`. A background worker (or manual trigger) confirms or expires these reservations. This prevents overselling while keeping available stock calculations (`quantity - quantity_reserved`) accurate in real-time.
 
-Known Limitations
+## Known Limitations
 To keep the scope of this "Lite" version focused on core transactional logic and multi-tenancy, the following features were deliberately omitted:
 
-In-Memory Rate Limiting: Rate limiting currently uses Express memory. In a multi-server deployment, this would need to be migrated to a Redis store.
-
-Basic RBAC: Roles (org_admin, staff) are hardcoded. A full enterprise version would require dynamic permission scopes and custom user groups.
-
-No External Payment Gateway: Order processing ends at "Confirmation." Integration with Stripe/PayPal was scoped out.
-
-No Database Read-Replicas: The system assumes a single primary database node. Read-heavy endpoints (like the Low Stock report) query the primary node directly.
-
-Pagination: While filtering is implemented, robust cursor-based pagination on high-volume routes (like Audit Logs and Orders) was deferred.
-
-
-### Next Step
-You also need to create the `.env.example` file so people know what to put in their `.env`. Create a file named `.env.example` and paste this into it:
-
-```env
-PORT=3000
-DATABASE_URL=postgresql://username:password@localhost:5432/your_database_name
-JWT_SECRET=your_jwt_secret
-
-
-
+* **In-Memory Rate Limiting:** Rate limiting currently uses Express memory. In a multi-server deployment, this would need to be migrated to a Redis store.
+* **Basic RBAC:** Roles (`org_admin`, `staff`) are hardcoded. A full enterprise version would require dynamic permission scopes and custom user groups.
+* **No External Payment Gateway:** Order processing ends at "Confirmation." Integration with Stripe/PayPal was scoped out.
+* **No Database Read-Replicas:** The system assumes a single primary database node. Read-heavy endpoints (like the Low Stock report) query the primary node directly.
+* **Pagination:** While filtering is implemented, robust cursor-based pagination on high-volume routes (like Audit Logs and Orders) was deferred.
+```
