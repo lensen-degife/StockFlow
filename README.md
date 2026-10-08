@@ -55,12 +55,7 @@ JWT_SECRET=your_super_secret_jwt_key_here
 To set up the database schema and populate it with initial test data (Organizations, Users, Products, and Warehouses):
 
 1. Ensure your `DATABASE_URL` is correctly set in your `.env` file.
-2. Run the setup script from the root directory:
 
-```bash
-node fix-db.js
-# (Or replace with your specific migration/seed script name if you renamed it)
-```
 
 The console will confirm that tables have been created and dummy data has been inserted.
 
