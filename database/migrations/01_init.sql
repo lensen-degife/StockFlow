@@ -1,3 +1,7 @@
+-- =============================================
+-- StockFlow Database Schema (Updated)
+-- =============================================
+
 -- 1. users table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,7 +24,7 @@ CREATE TABLE organization_members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role VARCHAR(50) NOT NULL, -- Roles: 'org_admin', 'staff', 'viewer'
+    role VARCHAR(50) NOT NULL, -- 'org_admin', 'staff', 'viewer'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (organization_id, user_id)
 );
@@ -50,7 +54,9 @@ CREATE TABLE customers (
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    UNIQUE(organization_id, email)
+    phone VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (organization_id, email)
 );
 
 -- 7. inventory table
@@ -59,26 +65,38 @@ CREATE TABLE inventory (
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    quantity_on_hand INT NOT NULL DEFAULT 0,
-    quantity_reserved INT NOT NULL DEFAULT 0,
-    version INT NOT NULL DEFAULT 1, -- Added for optimistic locking
-    UNIQUE(warehouse_id, product_id)
+    quantity_on_hand INTEGER NOT NULL DEFAULT 0,
+    quantity_reserved INTEGER NOT NULL DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 1, -- for optimistic locking
+    UNIQUE (warehouse_id, product_id)
 );
 
--- 8. inventory_movements table
+-- 8. inventory_levels table (extra table found in live DB)
+CREATE TABLE inventory_levels (
+    id SERIAL PRIMARY KEY,
+    organization_id UUID NOT NULL,
+    product_id UUID NOT NULL,
+    warehouse_id UUID NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    quantity_reserved INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (product_id, warehouse_id)
+);
+
+-- 9. inventory_movements table
 CREATE TABLE inventory_movements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL, -- STOCK_IN, RESERVATION, RESERVATION_RELEASE, ADJUSTMENT, FULFILLMENT
-    quantity INT NOT NULL,
-    reference_id UUID, -- Can link to an order_id
+    quantity INTEGER NOT NULL,
+    reference_id UUID,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. orders table
+-- 10. orders table
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -89,20 +107,20 @@ CREATE TABLE orders (
     idempotency_key VARCHAR(255),
     created_by UUID NOT NULL REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(organization_id, idempotency_key)
+    UNIQUE (organization_id, idempotency_key)
 );
 
--- 10. order_items table
+-- 11. order_items table
 CREATE TABLE order_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
     warehouse_id UUID NOT NULL REFERENCES warehouses(id),
-    quantity INT NOT NULL,
+    quantity INTEGER NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL
 );
 
--- 11. audit_logs table
+-- 12. audit_logs table
 CREATE TABLE audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
