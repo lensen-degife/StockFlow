@@ -25,6 +25,8 @@ const swaggerDocs = require('./config/swagger');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Security & Parsing Middleware
 app.use(helmet()); // Secures HTTP headers
 app.use(cors(
