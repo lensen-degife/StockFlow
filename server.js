@@ -27,7 +27,9 @@ const app = express();
 
 // Security & Parsing Middleware
 app.use(helmet()); // Secures HTTP headers
-app.use(cors()); // Allows browser clients to access your API
+app.use(cors(
+  'https://stockflow-frontend-woad.vercel.app/'
+)); // Allows browser clients to access your API
 app.use(express.json());
 
 app.use(logger);
