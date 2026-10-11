@@ -1,0 +1,414 @@
+================================================================================
+                      STOCKFLOW LITE - API ENDPOINTS SPECIFICATION
+================================================================================
+
+BASE URL:
+  Development: http://localhost:3000
+  Production:  (configured per environment, e.g., your deployed backend URL)
+
+GLOBAL HEADERS:
+  Content-Type: application/json
+  Authorization: Bearer <JWT_TOKEN> (Required for all protected routes)
+
+IMPORTANT NOTE FOR FRONTEND DEVELOPERS:
+  Multi-tenancy & Role-Based Access Control (RBAC):
+  - Most protected routes run through `requireRole(...)` middleware.
+  - The middleware looks for `organizationId` in:
+      1. Route params: req.params.organizationId
+      2. Request body: req.body.organization_id
+      3. Query parameter: req.query.organization_id
+  - When calling order endpoints (e.g., reserve, confirm, cancel, fulfill) or
+    endpoints without an organizationId in the route path, pass `organization_id`
+    either as a query parameter (e.g. `?organization_id=<UUID>`) or in the request body.
+
+
+================================================================================
+1. ORDERS MODULE (/api/v1/orders)
+================================================================================
+
+Order Lifecycle State Machine:
+  DRAFT -> RESERVED -> CONFIRMED -> FULFILLED
+    |         |            |
+    +---------+------------+------> CANCELLED
+
+--------------------------------------------------------------------------------
+1.1 CREATE ORDER (Draft)
+--------------------------------------------------------------------------------
+Method:        POST
+Endpoint:      /api/v1/orders
+Required Roles: org_admin, staff
+Required Headers:
+  - Authorization: Bearer <TOKEN>
+  - Content-Type: application/json
+  - Idempotency-Key: <unique-uuid-or-string>   [CRITICAL: prevents duplicate orders]
+
+Request Body:
+{
+  "organization_id": "00000000-0000-0000-0000-000000000000",
+  "customer_id": "00000000-0000-0000-0000-000000000000",
+  "items": [
+    {
+      "product_id": "00000000-0000-0000-0000-000000000000",
+      "warehouse_id": "00000000-0000-0000-0000-000000000000",
+      "quantity": 2,
+      "unit_price": 49.99
+    }
+  ]
+}
+
+Response (201 Created):
+{
+  "success": true,
+  "data": {
+    "id": "order-uuid",
+    "status": "DRAFT",
+    "total": 99.98,
+    "created_at": "2026-10-11T12:00:00.000Z",
+    "items": [ ... ]
+  }
+}
+
+Error Codes:
+  400 - Missing Idempotency-Key, invalid schema / missing items
+  409 - Idempotency-Key already used (duplicate submission)
+  401 / 403 - Unauthorized or insufficient permissions
+
+--------------------------------------------------------------------------------
+1.2 RESERVE ORDER
+--------------------------------------------------------------------------------
+Method:        POST
+Endpoint:      /api/v1/orders/:orderId/reserve?organization_id=<ORG_UUID>
+Description:   Locks stock for 15 minutes. Moves order status from DRAFT -> RESERVED.
+Required Roles: org_admin, staff
+Required Headers:
+  - Authorization: Bearer <TOKEN>
+
+URL Parameters:
+  - orderId: UUID of the order
+Query Parameter:
+  - organization_id: UUID of current organization (or include in JSON body)
+
+Request Body: (Optional / empty if query param provided)
+{
+  "organization_id": "00000000-0000-0000-0000-000000000000"
+}
+
+Response (200 OK):
+{
+  "success": true,
+  "data": {
+    "id": "order-uuid",
+    "status": "RESERVED",
+    "reservation_expires_at": "2026-10-11T12:15:00.000Z"
+  }
+}
+
+Error Codes:
+  400 - Order is not in DRAFT status, or insufficient inventory stock
+
+--------------------------------------------------------------------------------
+1.3 CONFIRM ORDER
+--------------------------------------------------------------------------------
+Method:        POST
+Endpoint:      /api/v1/orders/:orderId/confirm?organization_id=<ORG_UUID>
+Description:   Confirms reservation. Moves order status from RESERVED -> CONFIRMED.
+Required Roles: org_admin, staff
+Required Headers:
+  - Authorization: Bearer <TOKEN>
+
+URL Parameters:
+  - orderId: UUID of the order
+Query Parameter:
+  - organization_id: UUID of organization
+
+Response (200 OK):
+{
+  "success": true,
+  "data": {
+    "id": "order-uuid",
+    "status": "CONFIRMED"
+  }
+}
+
+Error Codes:
+  400 - Order must be RESERVED before confirming, or order not found
+
+--------------------------------------------------------------------------------
+1.4 CANCEL ORDER
+--------------------------------------------------------------------------------
+Method:        POST
+Endpoint:      /api/v1/orders/:orderId/cancel?organization_id=<ORG_UUID>
+Description:   Cancels order. If RESERVED or CONFIRMED, releases reserved inventory.
+Required Roles: org_admin, staff
+Required Headers:
+  - Authorization: Bearer <TOKEN>
+
+URL Parameters:
+  - orderId: UUID of the order
+Query Parameter:
+  - organization_id: UUID of organization
+
+Response (200 OK):
+{
+  "success": true,
+  "data": {
+    "id": "order-uuid",
+    "status": "CANCELLED"
+  }
+}
+
+Error Codes:
+  400 - Cannot cancel order that is already FULFILLED or CANCELLED
+
+--------------------------------------------------------------------------------
+1.5 FULFILL ORDER
+--------------------------------------------------------------------------------
+Method:        POST
+Endpoint:      /api/v1/orders/:orderId/fulfill?organization_id=<ORG_UUID>
+Description:   Permanently deducts inventory (quantity & quantity_reserved).
+               Moves status from CONFIRMED -> FULFILLED.
+Required Roles: org_admin, staff
+Required Headers:
+  - Authorization: Bearer <TOKEN>
+
+URL Parameters:
+  - orderId: UUID of the order
+Query Parameter:
+  - organization_id: UUID of organization
+
+Response (200 OK):
+{
+  "success": true,
+  "data": {
+    "id": "order-uuid",
+    "status": "FULFILLED"
+  }
+}
+
+Error Codes:
+  400 - Order must be in CONFIRMED status before fulfilling
+
+
+================================================================================
+2. AUTHENTICATION MODULE (/api/v1/auth)
+================================================================================
+
+2.1 Register
+Method:        POST
+Endpoint:      /api/v1/auth/register
+Body:
+{
+  "name": "User Full Name",
+  "email": "user@example.com",
+  "password": "securepassword"
+}
+Response (201 Created):
+{
+  "success": true,
+  "data": { "id": "...", "name": "...", "email": "...", "created_at": "..." }
+}
+
+2.2 Login
+Method:        POST
+Endpoint:      /api/v1/auth/login
+Body:
+{
+  "email": "user@example.com",
+  "password": "securepassword"
+}
+Response (200 OK):
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOi...",
+    "user": { "id": "...", "name": "...", "email": "..." }
+  }
+}
+
+2.3 Get Current User Profile
+Method:        GET
+Endpoint:      /api/v1/auth/me
+Header:        Authorization: Bearer <TOKEN>
+Response (200 OK):
+{
+  "success": true,
+  "data": { "id": "...", "name": "...", "email": "...", "created_at": "..." }
+}
+
+
+================================================================================
+3. ORGANIZATIONS MODULE (/api/v1/organizations)
+================================================================================
+
+3.1 Create Organization
+Method:        POST
+Endpoint:      /api/v1/organizations
+Header:        Authorization: Bearer <TOKEN>
+Body:
+{
+  "name": "Acme Corp",
+  "slug": "acme-corp"
+}
+Response (201 Created):
+{
+  "success": true,
+  "data": { "id": "org-uuid", "name": "Acme Corp", "slug": "acme-corp", "created_at": "..." }
+}
+
+3.2 Add Member to Organization
+Method:        POST
+Endpoint:      /api/v1/organizations/:organizationId/members
+Required Role: org_admin
+Body:
+{
+  "email": "teammember@example.com",
+  "role": "staff"   // Allowed values: 'org_admin', 'staff', 'viewer'
+}
+
+3.3 Get Organization Details
+Method:        GET
+Endpoint:      /api/v1/organizations/:organizationId
+Required Role: org_admin, staff, viewer
+
+3.4 Get Organization Members
+Method:        GET
+Endpoint:      /api/v1/organizations/:organizationId/members
+Required Role: org_admin, staff, viewer
+
+
+================================================================================
+4. PRODUCTS MODULE (/api/v1/products)
+================================================================================
+
+4.1 Create Product
+Method:        POST
+Endpoint:      /api/v1/products
+Required Role: org_admin, staff
+Body:
+{
+  "organization_id": "org-uuid",
+  "sku": "PROD-SKU-001",
+  "name": "Wireless Mouse",
+  "price": 29.99
+}
+
+4.2 Get Products (With Search & Pagination)
+Method:        GET
+Endpoint:      /api/v1/products?organization_id=<ORG_UUID>&search=mouse&page=1&limit=10&sortBy=name&sortOrder=ASC
+Required Role: org_admin, staff, viewer
+
+
+================================================================================
+5. WAREHOUSES MODULE (/api/v1/warehouses)
+================================================================================
+
+5.1 Create Warehouse
+Method:        POST
+Endpoint:      /api/v1/warehouses
+Required Role: org_admin, staff
+Body:
+{
+  "organization_id": "org-uuid",
+  "name": "Central Warehouse",
+  "location": "Building A, Floor 1"
+}
+
+5.2 Get Warehouses
+Method:        GET
+Endpoint:      /api/v1/warehouses?organization_id=<ORG_UUID>
+Required Role: org_admin, staff, viewer
+
+5.3 Get Warehouse by ID
+Method:        GET
+Endpoint:      /api/v1/warehouses/:warehouseId?organization_id=<ORG_UUID>
+Required Role: org_admin, staff, viewer
+
+
+================================================================================
+6. CUSTOMERS MODULE (/api/v1/customers)
+================================================================================
+
+6.1 Create Customer
+Method:        POST
+Endpoint:      /api/v1/customers
+Required Role: org_admin, staff
+Body:
+{
+  "organization_id": "org-uuid",
+  "name": "John Doe",
+  "email": "johndoe@example.com",
+  "phone": "+1234567890"
+}
+
+6.2 Get Customers
+Method:        GET
+Endpoint:      /api/v1/customers?organization_id=<ORG_UUID>
+Required Role: org_admin, staff, viewer
+
+
+================================================================================
+7. INVENTORY MODULE (/api/v1/inventory)
+================================================================================
+
+7.1 Get Inventory Levels
+Method:        GET
+Endpoint:      /api/v1/inventory?organization_id=<ORG_UUID>
+Required Role: org_admin, staff, viewer
+Returns:       List of products with current stock quantity and warehouse info.
+
+7.2 Adjust Stock (Inbound / Outbound / Correction)
+Method:        POST
+Endpoint:      /api/v1/inventory/adjust
+Required Role: org_admin, staff
+Body:
+{
+  "organization_id": "org-uuid",
+  "product_id": "product-uuid",
+  "warehouse_id": "warehouse-uuid",
+  "quantity_change": 50   // Positive to add stock, negative to deduct
+}
+
+7.3 Transfer Stock Between Warehouses
+Method:        POST
+Endpoint:      /api/v1/inventory/transfer
+Required Role: org_admin, staff
+Body:
+{
+  "organization_id": "org-uuid",
+  "product_id": "product-uuid",
+  "from_warehouse_id": "warehouse-uuid-1",
+  "to_warehouse_id": "warehouse-uuid-2",
+  "quantity": 10
+}
+
+
+================================================================================
+8. REPORTS & AUDIT LOGS
+================================================================================
+
+8.1 Low Stock Report
+Method:        GET
+Endpoint:      /api/v1/reports/low-stock?organization_id=<ORG_UUID>&threshold=20
+Required Role: org_admin
+
+8.2 Audit Logs
+Method:        GET
+Endpoint:      /api/v1/audit-logs?organization_id=<ORG_UUID>&actor_id=...&action=...&start_date=...&end_date=...
+Required Role: org_admin, viewer
+
+
+================================================================================
+9. SYSTEM / UTILITY ENDPOINTS
+================================================================================
+
+9.1 Health Check
+Method:        GET
+Endpoint:      /api/v1/health
+Public:        Yes (No auth required)
+Response:      { "status": "OK", "message": "API and Database are running" }
+
+9.2 Swagger UI Documentation
+Method:        GET
+Endpoint:      /api-docs
+Public:        Yes
+Interactive UI for exploring backend endpoints directly in the browser.
