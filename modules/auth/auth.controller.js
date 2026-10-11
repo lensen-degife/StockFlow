@@ -64,12 +64,43 @@ const login = async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    // Query user's organization membership
+    const memberResult = await db.query(
+      `SELECT om.organization_id, om.role, o.name as organization_name 
+       FROM organization_members om 
+       LEFT JOIN organizations o ON o.id = om.organization_id 
+       WHERE om.user_id = $1 
+       ORDER BY om.created_at ASC 
+       LIMIT 1`,
+      [user.id]
+    );
+    const member = memberResult.rows[0];
+    const organizationId = member ? member.organization_id : null;
+    const organizationName = member ? member.organization_name : null;
+
+    // Generate JWT token with organization_id included
+    const token = jwt.sign(
+      { 
+        userId: user.id,
+        organization_id: organizationId,
+        role: member ? member.role : null
+      }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '24h' }
+    );
 
     res.status(200).json({
       success: true,
-      data: { token, user: { id: user.id, name: user.name, email: user.email } }
+      data: { 
+        token, 
+        user: { 
+          id: user.id, 
+          name: user.name, 
+          email: user.email,
+          organization_id: organizationId,
+          organization_name: organizationName
+        } 
+      }
     });
   } catch (error) {
     res.status(500).json({

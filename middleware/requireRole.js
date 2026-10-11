@@ -3,8 +3,8 @@ const db = require('../config/db');
 const requireRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
-      // The organization ID can be in the URL params, body, or query
-      const organizationId = req.params.organizationId || req.body?.organization_id || req.query.organization_id;
+      // The organization ID can be in URL params, body, query, or decoded from the auth token
+      const organizationId = req.params.organizationId || req.body?.organization_id || req.query.organization_id || req.user?.organization_id;
       const userId = req.user.userId;
 
       if (!organizationId) {
