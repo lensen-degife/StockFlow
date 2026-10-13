@@ -84,7 +84,7 @@ const getInventory = async (req, res) => {
     const organizationId = req.user.organizationId;
     
     const result = await db.query(`
-      SELECT i.quantity, p.name AS product_name, p.sku, w.name AS warehouse_name
+      SELECT i.product_id, i.warehouse_id, i.quantity, p.name AS product_name, p.sku, w.name AS warehouse_name
       FROM inventory_levels i
       JOIN products p ON i.product_id = p.id
       JOIN warehouses w ON i.warehouse_id = w.id

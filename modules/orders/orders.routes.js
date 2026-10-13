@@ -1,11 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, reserveOrder, confirmOrder, cancelOrder, fulfillOrder } = require('./orders.controller');
+const { createOrder, reserveOrder, confirmOrder, cancelOrder, fulfillOrder, getOrders, getOrderById } = require('./orders.controller');
 const authenticate = require('../../middleware/authenticate');
 const requireRole = require('../../middleware/requireRole'); 
 
 const validate = require('../../middleware/validate');
 const { createOrderSchema } = require('../../validations/orders.schema');
+
+// GET /orders
+router.get(
+  '/', 
+  authenticate, 
+  requireRole(['org_admin', 'staff', 'viewer']), 
+  getOrders
+);
+
+// GET /orders/:orderId
+router.get(
+  '/:orderId', 
+  authenticate, 
+  requireRole(['org_admin', 'staff', 'viewer']), 
+  getOrderById
+);
 
 // POST /orders
 router.post(

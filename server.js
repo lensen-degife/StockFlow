@@ -30,7 +30,7 @@ app.set('trust proxy', 1);
 // Security & Parsing Middleware
 app.use(helmet()); // Secures HTTP headers
 app.use(cors(
-  'https://stockflow-frontend-woad.vercel.app/'
+  'https://stockflow-frontend-lac.vercel.app'
 )); // Allows browser clients to access your API
 app.use(express.json());
 

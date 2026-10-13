@@ -339,4 +339,88 @@ const fulfillOrder = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, reserveOrder, confirmOrder, cancelOrder, fulfillOrder };
+// GET /orders
+const getOrders = async (req, res) => {
+  try {
+    const organizationId = req.user.organizationId;
+
+    const query = `
+      SELECT 
+        o.id, 
+        o.organization_id, 
+        o.customer_id, 
+        c.name AS customer_name, 
+        o.status, 
+        o.total, 
+        o.created_at,
+        COALESCE(COUNT(oi.id), 0)::int AS items_count
+      FROM orders o
+      LEFT JOIN customers c ON c.id = o.customer_id
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      WHERE o.organization_id = $1
+      GROUP BY o.id, c.name
+      ORDER BY o.created_at DESC
+    `;
+
+    const result = await db.query(query, [organizationId]);
+
+    res.status(200).json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error("GET ORDERS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'An unexpected error occurred.' }
+    });
+  }
+};
+
+// GET /orders/:orderId
+const getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const organizationId = req.user.organizationId;
+
+    const orderResult = await db.query(
+      `SELECT o.*, c.name as customer_name, c.email as customer_email 
+       FROM orders o 
+       LEFT JOIN customers c ON c.id = o.customer_id 
+       WHERE o.id = $1 AND o.organization_id = $2`,
+      [orderId, organizationId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Order not found' }
+      });
+    }
+
+    const itemsResult = await db.query(
+      `SELECT oi.*, p.name as product_name, p.sku as product_sku, w.name as warehouse_name 
+       FROM order_items oi 
+       LEFT JOIN products p ON p.id = oi.product_id 
+       LEFT JOIN warehouses w ON w.id = oi.warehouse_id 
+       WHERE oi.order_id = $1`,
+      [orderId]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...orderResult.rows[0],
+        items: itemsResult.rows
+      }
+    });
+  } catch (error) {
+    console.error("GET ORDER BY ID ERROR:", error);
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'An unexpected error occurred.' }
+    });
+  }
+};
+
+module.exports = { createOrder, reserveOrder, confirmOrder, cancelOrder, fulfillOrder, getOrders, getOrderById };
