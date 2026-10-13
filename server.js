@@ -76,7 +76,18 @@ app.use('/api/v1/reports', reportRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-
+// Global error handler – MUST be after all routes
+app.use((err, req, res, next) => {
+  console.error('========== FULL ERROR ==========');
+  console.error(err);
+  console.error(err.stack);
+  console.error('================================');
+  
+  res.status(500).json({
+    message: 'Internal Server Error',
+    error: err.message
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
