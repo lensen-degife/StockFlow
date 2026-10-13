@@ -22,6 +22,7 @@ const reportRoutes = require('./modules/reports/reports.routes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocs = require('./config/swagger');
+const { creditCard } = require('zod');
 
 const app = express();
 
@@ -29,9 +30,14 @@ app.set('trust proxy', 1);
 
 // Security & Parsing Middleware
 app.use(helmet()); // Secures HTTP headers
-app.use(cors(
-  'https://stockflow-frontend-woad.vercel.app/'
-)); // Allows browser clients to access your API
+app.use(cors({
+  origin: [
+    'https://stockflow-frontend-lac.vercel.app',
+    'http://localhost:5173',   
+    'http://localhost:3000'
+  ],
+  credentials: true           
+})); // Allows browser clients to access your API
 app.use(express.json());
 
 app.use(logger);
@@ -77,7 +83,7 @@ const server = http.createServer(app);
 
 // Only start the server AND the background job if run directly (node server.js)
 if (require.main === module) {
-  
+
   startReservationTimer();
 
   server.listen(PORT, () => {
